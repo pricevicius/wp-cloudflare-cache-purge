@@ -17,12 +17,29 @@ function cfcp_plugin_settings() {
 add_action('admin_menu', 'cfcp_plugin_settings');
 // Renderiza a página de configurações do plugin
 function cfcp_plugin_settings_page() {
+	$tabs = [
+		'general' => 'Conexão Cloudflare',
+		'cache'   => 'Controle de Cache',
+	];
+
+	$active_tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : 'general';
+	if (!array_key_exists($active_tab, $tabs)) {
+		$active_tab = 'general';
+	}
 ?>
 		<div class="wrap">
 			<div class="header">
 				<h3>WP Cloudflare Cache Purge - Configurações</h3>
 				<p>Configurações para o plugin WP Cloudflare Cache Purge</p>
 			</div>
+			<h2 class="nav-tab-wrapper">
+				<?php foreach ($tabs as $tab_slug => $tab_label) : ?>
+					<a href="<?php echo esc_url(add_query_arg(['page' => 'cfcp-plugin-settings', 'tab' => $tab_slug], admin_url('admin.php'))); ?>"
+						class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>">
+						<?php echo esc_html($tab_label); ?>
+					</a>
+				<?php endforeach; ?>
+			</h2>
 			<?php settings_errors(); ?>
 			<form method="post" action="options.php">
 				<?php settings_fields('cfcp-settings-group'); ?>

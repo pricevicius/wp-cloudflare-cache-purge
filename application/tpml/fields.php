@@ -1,4 +1,4 @@
-<div class="firstconfig" id="firstconfig">
+<div class="firstconfig" id="firstconfig" <?php echo $active_tab === 'general' ? '' : 'style="display:none"'; ?>>
 	<table class="form-table">
 		<tr valign="top">
 			<th scope="row">E-mail de conexao:</th>
@@ -35,11 +35,16 @@
 	</table>
 </div>
 
-<div class="cachecontrol" id="cachecontrol">
+<div class="cachecontrol" id="cachecontrol" <?php echo $active_tab === 'cache' ? '' : 'style="display:none"'; ?>>
 	<h3>Controle de Cache (Cache-Control / CDN-Cache-Control)</h3>
 	<p class="description">
 		Define os headers de cache enviados ao navegador e à Cloudflare para visitantes não logados.
 		Usuários logados, prévias e feeds continuam sempre sem cache ou com TTL curto, independente das opções abaixo.
+	</p>
+	<p class="description">
+		<strong>Double-check:</strong> toda resposta do site inclui o header <code>X-CFCP-Cache-Rule</code>,
+		indicando se o controle está ativo, qual regra foi aplicada (<code>scope</code>) e o TTL usado.
+		Confira com <code>curl -I sua-url</code> ou na aba Network do navegador.
 	</p>
 	<table class="form-table">
 		<tr valign="top">
