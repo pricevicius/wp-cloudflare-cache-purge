@@ -47,5 +47,56 @@ function cfcp_register_settings() {
         'cfcp-settings-group',              // Nome do grupo de opções
         'cfcp_api',                            // Nome da opção de URL
     );
+
+    // Controle de cache (Cache-Control / CDN-Cache-Control)
+    register_setting(
+        'cfcp-settings-group',
+        'cfcp_cache_control_enabled',
+        [
+            'sanitize_callback' => 'cfcp_sanitize_checkbox',
+            'default'           => '1',
+        ]
+    );
+    register_setting(
+        'cfcp-settings-group',
+        'cfcp_cache_ttl_default',
+        [
+            'sanitize_callback' => 'absint',
+            'default'           => 2592000,
+        ]
+    );
+    register_setting(
+        'cfcp-settings-group',
+        'cfcp_cache_ttl_home',
+        [
+            'sanitize_callback' => 'absint',
+            'default'           => 900,
+        ]
+    );
+    register_setting(
+        'cfcp-settings-group',
+        'cfcp_cache_ttl_404',
+        [
+            'sanitize_callback' => 'absint',
+            'default'           => 2592000,
+        ]
+    );
+    register_setting(
+        'cfcp-settings-group',
+        'cfcp_cache_ttl_feed',
+        [
+            'sanitize_callback' => 'absint',
+            'default'           => 300,
+        ]
+    );
 }
 add_action('admin_init', 'cfcp_register_settings');
+
+/**
+ * Checkboxes não enviam nada no POST quando desmarcados, então
+ * normalizamos para '1'/'0' em vez de depender do valor bruto.
+ */
+function cfcp_sanitize_checkbox($value)
+{
+    return $value ? '1' : '0';
+}

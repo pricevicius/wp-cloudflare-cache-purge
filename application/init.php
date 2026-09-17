@@ -1,5 +1,7 @@
 <?php
 require "inc/config.php";
+require "inc/cache-headers.php";
+
 $cfcp_email = get_option('cfcp_email');
 $cfcp_api = get_option('cfcp_api');
 $cfcp_zone = get_option('cfcp_zone');
