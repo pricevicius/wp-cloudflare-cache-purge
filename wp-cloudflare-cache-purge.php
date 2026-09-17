@@ -6,6 +6,8 @@
 * Author: Pricevicius
 * Text Domain: wp-cloudflare-cache-purge
 * License: MIT
+* Requires at least: 5.0
+* Requires PHP: 7.4
 */
 
 if (!defined('ABSPATH')) exit;
