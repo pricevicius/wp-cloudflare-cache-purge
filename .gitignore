@@ -1,0 +1,9 @@
+node_modules
+*-lock.json
+*.log
+*.cache
+*.tmp
+*.bak
+*.swp
+*.DS_Store
+*:Zone.Identifier
