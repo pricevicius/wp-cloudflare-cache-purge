@@ -224,3 +224,17 @@ function cfcp_maybe_override_remote_addr()
 	}
 }
 cfcp_maybe_override_remote_addr();
+
+
+/**
+ * Mostra só o final de um segredo (ex: "••••a1b2"), para a tela de admin
+ * confirmar que o valor existe sem expô-lo.
+ */
+function cfcp_mask_secret($value)
+{
+	$value = (string) $value;
+	if ($value === '') {
+		return '';
+	}
+	return '••••' . substr($value, -4);
+}
