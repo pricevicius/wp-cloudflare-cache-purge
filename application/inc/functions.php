@@ -6,9 +6,25 @@
  * Se quiser controlar facilmente, pode definir no wp-config.php:
  *
  * define('CFCP_USE_CACHE_TAGS', true);
- * define('CFCP_CF_TOKEN', 'SEU_TOKEN');
+ * define('CFCP_CF_TOKEN', 'SEU_TOKEN');      // API Token com permissão só de Cache Purge
  * define('CFCP_CF_ZONE_ID', 'SEU_ZONE_ID');
+ * define('CFCP_TAG_PREFIX', 'es');           // prefixo das cache tags deste site
+ *
+ * Sites que dividem a mesma zona da Cloudflare (ex: raiz e /pe) precisam de
+ * prefixos diferentes, senão purgar 'post-123' limpa o post 123 dos dois.
+ * Sem CFCP_TAG_PREFIX, o prefixo sai do caminho do site ('pe' para /pe) ou
+ * 'root' quando o site está na raiz do domínio.
  */
+
+function cfcp_get_purger()
+{
+	return new CFCP_Purger(
+		CFCP_URL,
+		CFCP_SECRETKEY,
+		CFCP_ZONE,
+		defined('CFCP_TOKEN') ? CFCP_TOKEN : ''
+	);
+}
 
 /**
  * Adiciona URL base + primeiras páginas paginadas
@@ -149,7 +165,7 @@ function cfcp_build_cache_tags_to_purge($post_id)
 		$tags[] = 'author-related-' . (int) $autorrelated;
 	}
 
-	return array_values(array_unique(array_filter($tags)));
+	return array_map('cfcp_tag', array_values(array_unique(array_filter($tags))));
 }
 
 /**
@@ -163,13 +179,7 @@ function cfcp_purge_urls(array $urls_to_purge)
 		return false;
 	}
 
-	$cfcp = new CFCP_Purger(
-		CFCP_URL,
-		CFCP_SECRETKEY,
-		CFCP_ZONE
-	);
-
-	return $cfcp->cacheConnection($urls_to_purge);
+	return cfcp_get_purger()->cacheConnection($urls_to_purge);
 }
 
 /**
@@ -184,13 +194,7 @@ function cfcp_purge_tags(array $tags_to_purge)
 		return false;
 	}
 
-	$cfcp = new CFCP_Purger(
-		CFCP_URL,
-		CFCP_SECRETKEY,
-		CFCP_ZONE
-	);
-
-	return $cfcp->cacheConnectionTags($tags_to_purge);
+	return cfcp_get_purger()->cacheConnectionTags($tags_to_purge);
 }
 
 /**
@@ -206,19 +210,54 @@ function cfcp_store_last_public_url($post_id)
 }
 
 /**
- * Executa purge completo do post
+ * Purge assíncrono: as listas de URLs e tags são montadas na hora do save
+ * (precisam do estado do post), mas as chamadas à API da Cloudflare só
+ * saem no fim da requisição, depois de responder ao editor. Vários posts
+ * salvos na mesma requisição (ex: importador) viram uma fila única, sem
+ * URL ou tag repetida.
  */
 function cfcp_run_full_purge($post_id, $post_url = '')
 {
-	$urls_to_purge = cfcp_build_urls_to_purge($post_id, $post_url);
-	$tags_to_purge = cfcp_build_cache_tags_to_purge($post_id);
+	global $cfcp_purge_queue;
 
-	if (!empty($urls_to_purge)) {
-		cfcp_purge_urls($urls_to_purge);
+	if (!is_array($cfcp_purge_queue)) {
+		$cfcp_purge_queue = ['urls' => [], 'tags' => []];
 	}
 
-	if (!empty($tags_to_purge)) {
-		cfcp_purge_tags($tags_to_purge);
+	$cfcp_purge_queue['urls'] = array_merge($cfcp_purge_queue['urls'], cfcp_build_urls_to_purge($post_id, $post_url));
+	$cfcp_purge_queue['tags'] = array_merge($cfcp_purge_queue['tags'], cfcp_build_cache_tags_to_purge($post_id));
+
+	if (!has_action('shutdown', 'cfcp_flush_purge_queue')) {
+		add_action('shutdown', 'cfcp_flush_purge_queue', 100);
+	}
+}
+
+function cfcp_flush_purge_queue()
+{
+	global $cfcp_purge_queue;
+
+	if (empty($cfcp_purge_queue) || !is_array($cfcp_purge_queue)) {
+		return;
+	}
+
+	$urls = array_values(array_unique($cfcp_purge_queue['urls']));
+	$tags = array_values(array_unique($cfcp_purge_queue['tags']));
+
+	$cfcp_purge_queue = null;
+
+	ignore_user_abort(true);
+
+	// Libera a resposta ao editor antes de falar com a API da Cloudflare.
+	if (function_exists('fastcgi_finish_request')) {
+		fastcgi_finish_request();
+	}
+
+	if (!empty($urls)) {
+		cfcp_purge_urls($urls);
+	}
+
+	if (!empty($tags)) {
+		cfcp_purge_tags($tags);
 	}
 }
 
@@ -406,7 +445,7 @@ function cfcp_send_cache_tag_headers()
 		}
 	}
 
-	$tags = array_values(array_unique(array_filter($tags)));
+	$tags = array_map('cfcp_tag', array_values(array_unique(array_filter($tags))));
 
 	if (!empty($tags) && !headers_sent()) {
 		header('Cache-Tag: ' . implode(',', $tags));
