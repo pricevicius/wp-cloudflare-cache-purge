@@ -149,7 +149,8 @@ function cfcp_diag_checklist()
 
 	if (defined('CFCP_ZONE')) {
 		if (defined('CFCP_TOKEN') && CFCP_TOKEN !== '') {
-			$items[] = ['ok', 'Purge com API Token', 'Usando um token de permissão restrita.'];
+			$origem = defined('CFCP_CF_TOKEN') ? 'definido no wp-config.php (CFCP_CF_TOKEN)' : 'salvo nas configurações do plugin';
+			$items[] = ['ok', 'Purge com API Token', 'Usando um token de permissão restrita, ' . $origem . '.'];
 		} else {
 			$items[] = ['warn', 'Purge com a Global API Key', 'Funciona, mas essa chave dá acesso total à conta. Prefira um API Token só com "Zone > Cache Purge".'];
 		}

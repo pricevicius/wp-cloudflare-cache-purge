@@ -3,8 +3,13 @@
 		<tr valign="top">
 			<th scope="row">API Token (recomendado):</th>
 			<td>
+				<?php if (defined('CFCP_CF_TOKEN') && CFCP_CF_TOKEN !== '') : ?>
+					<input type="text" id="cfcp_api_token" value="<?php echo esc_attr(cfcp_mask_secret(CFCP_CF_TOKEN)); ?>" class="regular-text" disabled>
+					<p class="description"><strong>Definido no wp-config.php</strong> (<code>CFCP_CF_TOKEN</code>). Tem preferência sobre qualquer valor salvo aqui; para trocar, altere o wp-config.php.</p>
+				<?php else : ?>
 				<input type="password" name="cfcp_api_token" id="cfcp_api_token"
 					value="<?php echo esc_attr(get_option('cfcp_api_token')); ?>" class="regular-text">
+				<?php endif; ?>
 				<p class="description">
 					Token da Cloudflare com permissão apenas de <strong>Zone &rsaquo; Cache Purge</strong> nesta zona.
 					Se preenchido, tem preferência sobre o e-mail e a chave global abaixo.
@@ -25,8 +30,13 @@
 		<tr valign="top">
 			<th scope="row">ZONA:</th>
 			<td>
+				<?php if (defined('CFCP_CF_ZONE_ID') && CFCP_CF_ZONE_ID !== '') : ?>
+					<input type="text" id="cfcp_zone" value="<?php echo esc_attr(cfcp_mask_secret(CFCP_CF_ZONE_ID)); ?>" class="regular-text" disabled>
+					<p class="description"><strong>Definida no wp-config.php</strong> (<code>CFCP_CF_ZONE_ID</code>). Tem preferência sobre o valor salvo aqui.</p>
+				<?php else : ?>
 				<input type="text" name="cfcp_zone" id="cfcp_zone"
 					value="<?php echo esc_attr(get_option('cfcp_zone')); ?>" class="regular-text">
+				<?php endif; ?>
 				<p class="description">
 					Insira a zona (zone ID) do Cloudflare
 				</p>
